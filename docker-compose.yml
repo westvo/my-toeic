@@ -1,0 +1,23 @@
+services:
+  docmint:
+    build: .
+    container_name: docmint-server
+    restart: always
+    ports:
+      - "8080:8000"
+    volumes:
+      - .:/app
+      - ../documents:/app/gemini_documents:ro
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - node_modules
+        - action: rebuild
+          path: Dockerfile
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DOCS_DIR=/app/gemini_documents

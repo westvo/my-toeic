@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEIC Grammar Practice</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%236366f1;stop-opacity:1'/><stop offset='100%' style='stop-color:%238b5cf6;stop-opacity:1'/></linearGradient></defs><circle cx='50' cy='50' r='45' fill='url(%23grad)'/><path d='M35 40 Q50 25 65 40 M35 50 L65 50 M35 60 Q50 75 65 60' stroke='white' stroke-width='4' fill='none' stroke-linecap='round'/><circle cx='35' cy='40' r='3' fill='white'/><circle cx='50' cy='30' r='3' fill='white'/><circle cx='65' cy='40' r='3' fill='white'/><circle cx='35' cy='60' r='3' fill='white'/><circle cx='50' cy='70' r='3' fill='white'/><circle cx='65' cy='60' r='3' fill='white'/></svg>">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #64748b;
+            --secondary-light: #94a3b8;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #10b981;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 40px 20px;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .qa-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .domain-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary-light);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .question {
+            font-size: 1.2rem;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 15px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .option.correct {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .option.wrong {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .answer-box {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+        }
+
+        .answer-box.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .ans-label {
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .explanation {
+            color: var(--text-dim);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .explanation p {
+            margin-bottom: 12px;
+        }
+
+        .explanation ul,
+        .explanation ol {
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+
+        .explanation li {
+            margin-bottom: 8px;
+        }
+
+        .explanation strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .explanation blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        button.show-btn,
+        button.check-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button.show-btn {
+            background: var(--secondary);
+        }
+
+        button.show-btn:hover,
+        button.check-btn:hover {
+            background: var(--primary-light);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        button.show-btn:hover {
+            background: var(--secondary-light);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* Top Right Menu */
+        .top-right-menu {
+            position: absolute;
+            top: 20px;
+            /* Adjust as needed */
+            right: 20px;
+            /* Adjust as needed */
+            z-index: 10;
+            /* Ensure it's above other content */
+            background-color: var(--primary);
+            padding: 8px 15px;
+            border-radius: 10px;
+            /* Matching the qa-card radius */
+            font-size: 0.9rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .top-right-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .top-right-menu a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+                padding: 30px 15px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .qa-card {
+                padding: 25px;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .container {
+                padding: 20px 10px;
+            }
+
+            header {
+                margin-bottom: 35px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+                margin-bottom: 8px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .qa-card {
+                padding: 20px;
+                margin-bottom: 18px;
+                border-radius: 15px;
+            }
+
+            .domain-tag {
+                font-size: 0.7rem;
+                padding: 3px 10px;
+            }
+
+            .question {
+                font-size: 1.05rem;
+                line-height: 1.5;
+                margin-bottom: 18px;
+            }
+
+            .option {
+                padding: 12px 15px;
+                gap: 12px;
+                font-size: 0.95rem;
+            }
+
+            .option input[type="checkbox"],
+            .option input[type="radio"] {
+                margin-right: 6px;
+            }
+
+            button.show-btn,
+            button.check-btn {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+                margin-top: 12px;
+                margin-right: 8px;
+            }
+
+            .answer-box {
+                margin-top: 20px;
+                padding-top: 18px;
+            }
+
+            .explanation {
+                font-size: 0.9rem;
+            }
+
+            .explanation p {
+                margin-bottom: 10px;
+            }
+
+            .explanation ul,
+            .explanation ol {
+                margin-bottom: 12px;
+                padding-left: 18px;
+            }
+
+            .explanation li {
+                margin-bottom: 6px;
+            }
+
+            footer {
+                margin-top: 40px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 8px;
+            }
+
+            .container {
+                padding: 15px 8px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .subtitle {
+                font-size: 0.95rem;
+            }
+
+            .qa-card {
+                padding: 16px;
+                margin-bottom: 15px;
+                border-radius: 12px;
+            }
+
+            .domain-tag {
+                font-size: 0.65rem;
+                padding: 2px 8px;
+            }
+
+            .question {
+                font-size: 1rem;
+                margin-bottom: 15px;
+            }
+
+            .option {
+                padding: 10px 12px;
+                gap: 10px;
+                font-size: 0.9rem;
+            }
+
+            .option strong {
+                font-size: 0.85rem;
+            }
+
+            button.show-btn,
+            button.check-btn {
+                padding: 7px 14px;
+                font-size: 0.85rem;
+                margin-top: 10px;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
+
+            .answer-box {
+                margin-top: 15px;
+                padding-top: 15px;
+            }
+
+            .ans-label {
+                font-size: 0.9rem;
+            }
+
+            .explanation {
+                font-size: 0.85rem;
+                line-height: 1.5;
+            }
+
+            .explanation p {
+                margin-bottom: 8px;
+            }
+
+            .explanation ul,
+            .explanation ol {
+                margin-bottom: 10px;
+                padding-left: 15px;
+            }
+
+            .explanation li {
+                margin-bottom: 5px;
+                font-size: 0.85rem;
+            }
+
+            .explanation strong {
+                font-size: 0.85rem;
+            }
+
+            footer {
+                margin-top: 30px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Landscape mobile optimization */
+        @media (max-width: 768px) and (orientation: landscape) {
+            body {
+                padding: 15px 20px;
+            }
+
+            .qa-card {
+                padding: 18px;
+            }
+
+            .question {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-right-menu">
+        <a href="index.html">Switch to Home</a>
+    </div>
+    <div class="container">
+        <header>
+            <h1>TOEIC Grammar Practice: Nouns</h1>
+            <p class="subtitle">Luyện tập 10 câu hỏi trọng tâm về Danh từ (Day 1)</p>
+        </header>
+
+        <div id="qa-container">
+            <!-- Questions will be injected here -->
+        </div>
+
+        <footer>
+            <p>&copy; 2026 TOEIC Study Hub - Prepared for er_macbook_310</p>
+        </footer>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                "domain": "Noun Suffixes",
+                "q": "The factory has increased its _______ of electronic components this year.",
+                "options": ["produce", "productive", "production", "productively"],
+                "correct": 2,
+                "explanation": "Sau tính từ sở hữu 'its' cần một **Danh từ**. \n- (A) produce (V): sản xuất\n- (B) productive (Adj): năng suất\n- (C) production (N): sự sản xuất\n- (D) productively (Adv): một cách năng suất.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Position: After Article",
+                "q": "The _______ of the old office building will take approximately six months.",
+                "options": ["renovate", "renovation", "renovated", "renovating"],
+                "correct": 1,
+                "explanation": "Đứng sau mạo từ 'The' và trước giới từ 'of' cần một **Danh từ**. \n- (B) renovation: sự sửa chữa/cải tạo.\n- Các phương án khác là động từ hoặc tính từ.\n\n**Đáp án: B**"
+            },
+            {
+                "domain": "Position: After Possessive Adjective",
+                "q": "We would like to thank you for your _______ during the merger process.",
+                "options": ["cooperate", "cooperative", "cooperation", "cooperatively"],
+                "correct": 2,
+                "explanation": "Sau tính từ sở hữu 'your' cần một **Danh từ**.\n- (C) cooperation: sự hợp tác.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Compound Nouns",
+                "q": "All employees must strictly follow the company's _______ standards.",
+                "options": ["safe", "safely", "safety", "safeness"],
+                "correct": 2,
+                "explanation": "Đây là cụm **Danh từ ghép**: Safety standards (tiêu chuẩn an toàn).\n- (A) safe (Adj): an toàn\n- (C) safety (N): sự an toàn/tính an toàn.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Uncountable Nouns",
+                "q": "The technician is responsible for maintaining all the laboratory _______.",
+                "options": ["equip", "equipment", "equipments", "equipped"],
+                "correct": 1,
+                "explanation": "**Equipment** là danh từ không đếm được, không bao giờ ở dạng số nhiều (thêm 's').\n- Loại (C) vì có 's'.\n- Loại (A) vì là động từ.\n\n**Đáp án: B**"
+            },
+            {
+                "domain": "Noun Suffixes: Person",
+                "q": "Ms. Sarah has been working as a research _______ for over five years.",
+                "options": ["assist", "assisted", "assistant", "assistance"],
+                "correct": 2,
+                "explanation": "Dựa vào ngữ cảnh 'working as a...' (làm việc với tư cách là...), ta cần một danh từ chỉ người.\n- (C) assistant: trợ lý.\n- (D) assistance: sự giúp đỡ.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Position: After Adjective",
+                "q": "The manager provided clear _______ on how to use the new software.",
+                "options": ["instructs", "instructions", "instructive", "instructively"],
+                "correct": 1,
+                "explanation": "Sau tính từ 'clear' cần một **Danh từ**.\n- (B) instructions: các hướng dẫn.\n\n**Đáp án: B**"
+            },
+            {
+                "domain": "Position: Subject",
+                "q": "_______ in the workplace is essential for achieving long-term goals.",
+                "options": ["Productive", "Productively", "Productivity", "Produce"],
+                "correct": 2,
+                "explanation": "Vị trí này cần một danh từ làm **Chủ ngữ** cho câu.\n- (C) Productivity: năng suất.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Position: After Preposition",
+                "q": "Please contact the marketing department for more _______ about the campaign.",
+                "options": ["inform", "informative", "information", "informatively"],
+                "correct": 2,
+                "explanation": "Sau giới từ 'for' (hoặc mạo từ ngầm định) cần một danh từ. Đặc biệt **Information** là danh từ không đếm được.\n- (C) information: thông tin.\n\n**Đáp án: C**"
+            },
+            {
+                "domain": "Compound Nouns",
+                "q": "Applicants are required to fill out the _______ form completely.",
+                "options": ["apply", "application", "applicable", "applicant"],
+                "correct": 1,
+                "explanation": "Cụm danh từ ghép: **Application form** (đơn đăng ký).\n- (D) applicant: người nộp đơn (không hợp nghĩa khi ghép với 'form').\n\n**Đáp án: B**"
+            }
+        ];
+
+        // Configure marked to handle single line breaks
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        const container = document.getElementById('qa-container');
+
+        questions.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'qa-card';
+
+            let optionsHtml = '';
+            const isMultiChoice = Array.isArray(item.correct);
+            item.options.forEach((opt, oIdx) => {
+                const inputType = isMultiChoice ? 'checkbox' : 'radio';
+                optionsHtml += `<div class="option" data-qidx="${index}" data-oidx="${oIdx}" onclick="selectOption(this)">
+                    <input type="${inputType}" name="question-${index}" value="${oIdx}" style="margin-right:8px;">
+                    <strong>${String.fromCharCode(65 + oIdx)}.</strong> ${opt}
+                </div>`;
+            });
+
+            let correctAnswersText;
+            if (Array.isArray(item.correct)) {
+                correctAnswersText = item.correct.map(c => String.fromCharCode(65 + c)).join(', ');
+            } else {
+                correctAnswersText = String.fromCharCode(65 + item.correct);
+            }
+
+            card.innerHTML = `
+                <div class="domain-tag">${item.domain}</div>
+                <div class="question">${index + 1}. ${item.q}</div>
+                <div class="options" id="options-${index}">
+                    ${optionsHtml}
+                </div>
+                <button class="check-btn" onclick="checkAnswer(${index})">Kiểm tra</button>
+                <button class="show-btn" onclick="toggleAnswer(${index})">Giải thích</button>
+                <div id="ans-${index}" class="answer-box">
+                    <span class="ans-label">Đáp án đúng: ${correctAnswersText}</span>
+                    <div class="explanation">${marked.parse(item.explanation)}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        function selectOption(el) {
+            const qIdx = parseInt(el.dataset.qidx);
+            const oIdx = parseInt(el.dataset.oidx);
+            const question = questions[qIdx];
+            const inputElement = el.querySelector('input');
+
+            // For single-choice questions (radio buttons)
+            if (inputElement.type === 'radio') {
+                // Deselect all other options for this question
+                const siblings = el.parentElement.querySelectorAll('.option');
+                siblings.forEach(s => {
+                    s.classList.remove('selected');
+                    s.querySelector('input').checked = false;
+                });
+                // Select the clicked option
+                el.classList.add('selected');
+                inputElement.checked = true;
+            }
+            // For multiple-choice questions (checkboxes)
+            else if (inputElement.type === 'checkbox') {
+                // Toggle selection for the clicked option
+                el.classList.toggle('selected');
+                inputElement.checked = !inputElement.checked;
+            }
+        }
+
+        function checkAnswer(qIdx) {
+            const question = questions[qIdx];
+            const optionsContainer = document.getElementById(`options-${qIdx}`);
+            const allOptions = optionsContainer.querySelectorAll('.option');
+
+            const correctIndices = Array.isArray(question.correct) ? question.correct : [question.correct];
+            const selectedIndices = [];
+
+            allOptions.forEach(optionEl => {
+                const oIdx = parseInt(optionEl.dataset.oidx);
+                optionEl.classList.remove('correct', 'wrong'); // Clear previous feedback
+
+                if (optionEl.classList.contains('selected')) {
+                    selectedIndices.push(oIdx);
+                }
+            });
+
+            let allSelectedCorrect = true;
+            let allCorrectSelected = true;
+
+            // Check selected options
+            selectedIndices.forEach(sIdx => {
+                if (!correctIndices.includes(sIdx)) {
+                    allOptions[sIdx].classList.add('wrong');
+                    allSelectedCorrect = false;
+                } else {
+                    allOptions[sIdx].classList.add('correct');
+                }
+            });
+
+            // Check if all correct options were selected
+            correctIndices.forEach(cIdx => {
+                if (!selectedIndices.includes(cIdx)) {
+                    allOptions[cIdx].classList.add('correct'); // Highlight correct but unselected
+                    allCorrectSelected = false;
+                }
+            });
+
+            // If all selected are correct AND all correct are selected, then it's fully correct
+            // Otherwise, it's partially correct or wrong.
+            // The current logic highlights wrong selections and all correct answers.
+        }
+
+        function toggleAnswer(idx) {
+            const box = document.getElementById(`ans-${idx}`);
+            box.classList.toggle('visible');
+        }
+    </script>
+</body>
+
+</html>
+```
