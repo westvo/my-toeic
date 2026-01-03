@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMint - Premium Documentation Viewer</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="A premium, lightweight documentation viewer for your local markdown files. Clean, fast, and beautiful.">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23007acc;stop-opacity:1'/><stop offset='100%' style='stop-color:%234ec9b0;stop-opacity:1'/></linearGradient></defs><rect x='20' y='15' width='60' height='70' rx='5' fill='url(%23grad)'/><path d='M30 30 L50 30 M30 40 L70 40 M30 50 L70 50 M30 60 L60 60' stroke='white' stroke-width='3' stroke-linecap='round'/><circle cx='25' cy='30' r='2' fill='white'/><circle cx='25' cy='40' r='2' fill='white'/><circle cx='25' cy='50' r='2' fill='white'/><circle cx='25' cy='60' r='2' fill='white'/></svg>">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js for Syntax Highlighting -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #007acc;
+            /* VS Code Blue */
+            --primary-light: #3e9ceb;
+            --bg-dark: #1e1e1e;
+            /* VS Code Background */
+            --bg-card: #252526;
+            /* VS Code Sidebar */
+            --text-main: #d4d4d4;
+            /* VS Code Text */
+            --text-dim: #8a8a8a;
+            --accent: #4ec9b0;
+            /* VS Code Greenish accent */
+            --glass-border: #3c3c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* Sidebar Styles */
+        aside {
+            width: 320px;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .logo {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: 5px;
+        }
+
+        #file-tree {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* Tree Item Styles */
+        .tree-item {
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tree-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .tree-item.active {
+            background: rgba(0, 122, 204, 0.2);
+            color: white;
+        }
+
+        .tree-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .folder-item>.tree-item {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .folder-item>.nested-list {
+            display: none;
+            padding-left: 20px;
+            list-style: none;
+        }
+
+        .folder-item.open>.nested-list {
+            display: block;
+            list-style: none;
+        }
+
+        /* Caret Icon for Folders */
+        .caret {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
+
+        .folder-item.open>.tree-item>.caret {
+            transform: rotate(90deg);
+        }
+
+        /* Content Area Styles */
+        main {
+            flex-grow: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #content-viewer {
+            flex-grow: 1;
+            padding: 30px 40px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Markdown Styling (from previous step) */
+        .prose {
+            max-width: 850px;
+            margin: 0 auto;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        .prose h1 {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .prose h2 {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1.7rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .prose h3 {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1.4rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .prose p {
+            margin-bottom: 1.25rem;
+        }
+
+        .prose code {
+            background: #333;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+        }
+
+        .prose pre {
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .prose pre code.hljs {
+            padding: 1.2em;
+            border-radius: 6px;
+        }
+
+        .prose blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 20px;
+            margin: 20px 0;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        .prose table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+        }
+
+        .prose th,
+                    .prose td {
+                        padding: 10px 14px;
+                        border: 1px solid var(--glass-border);
+                        text-align: left;
+                    }
+        
+                    .prose th {
+                        background-color: #333;
+                    }
+        
+                    .prose tr:nth-child(2n) {
+                        background-color: #2d2d2d;
+                    }
+        
+                    .prose ul,
+                    .prose ol {
+                        padding-left: 1.5rem;
+                        margin-bottom: 1.25rem;
+                        list-style: none;
+                    }
+        
+                    .prose li {
+                        margin-bottom: 0.5rem;
+                        list-style: none;
+                    }
+        
+                    .prose li>ul,
+                    .prose li>ol {
+                        margin-top: 0.5rem;
+                        margin-bottom: 0.5rem;
+                        padding-left: 1.5rem;
+                        ;
+                        list-style: none;
+                    }
+        
+                    .empty-state {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        color: var(--text-dim);
+                        text-align: center;
+                    }
+        
+                    .empty-state svg {
+                        width: 60px;
+                        height: 60px;
+                        margin-bottom: 20px;
+                        opacity: 0.3;
+                    }
+        
+                    ::-webkit-scrollbar {
+                        width: 10px;
+                        height: 10px;
+                    }
+        
+                    ::-webkit-scrollbar-track {
+                        background: var(--bg-card);
+                    }
+        
+                    ::-webkit-scrollbar-thumb {
+                        background: #424242;
+                        border-radius: 10px;
+                    }
+        
+                    ::-webkit-scrollbar-thumb:hover {
+                        background: #555;
+                    }
+        
+                    /* Mobile Menu Toggle */
+                    .mobile-menu-toggle {
+                        display: none;
+                        position: fixed;
+                        top: 20px;
+                        left: 20px;
+                        z-index: 1000;
+                        background: var(--bg-card);
+                        border: 1px solid var(--glass-border);
+                        border-radius: 8px;
+                        padding: 10px;
+                        cursor: pointer;
+                        color: var(--text-main);
+                    }
+        
+                    .mobile-menu-toggle svg {
+                        width: 24px;
+                        height: 24px;
+                    }
+        
+                    /* Top Right Menu */
+                    .top-right-menu {
+                        position: absolute;
+                        top: 15px; /* Adjust as needed */
+                        right: 20px; /* Adjust as needed */
+                        z-index: 10; /* Ensure it's above other content */
+                        background-color: var(--primary);
+                        padding: 8px 15px;
+                        border-radius: 6px;
+                        font-size: 0.9rem;
+                    }
+        
+                    .top-right-menu a {
+                        color: white;
+                        text-decoration: none;
+                    }
+        
+                    .top-right-menu a:hover {
+                        text-decoration: underline;
+                    }
+        
+                    /* Responsive Design */
+                    @media (max-width: 1024px) {
+                        #app {
+                            padding: 5px;
+                            gap: 5px;
+                        }
+        
+                        aside {
+                            width: 280px;
+                        }
+        
+                        #content-viewer {
+                            padding: 20px 25px;
+                        }
+        
+                        .prose {
+                            max-width: 100%;
+                        }
+                    }
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+
+            #app {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                padding: 0;
+                gap: 0;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            aside {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80%;
+                max-width: 320px;
+                height: 100vh;
+                z-index: 999;
+                border-radius: 0;
+                border-right: 1px solid var(--glass-border);
+                border-top: none;
+                border-left: none;
+                border-bottom: none;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+
+            aside.mobile-open {
+                left: 0;
+            }
+
+            main {
+                border-radius: 0;
+                border: none;
+                min-height: 100vh;
+                margin-top: 60px;
+            }
+
+            #content-viewer {
+                padding: 15px 20px;
+            }
+
+            .prose {
+                font-size: 0.95rem;
+            }
+
+            .prose h1 {
+                font-size: 1.8rem;
+            }
+
+            .prose h2 {
+                font-size: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            .prose h3 {
+                font-size: 1.3rem;
+            }
+
+            .prose pre code.hljs {
+                padding: 0.8em;
+                font-size: 0.85rem;
+            }
+
+            .prose table {
+                font-size: 0.85rem;
+            }
+
+            .prose th,
+            .prose td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            aside {
+                width: 85%;
+            }
+
+            #content-viewer {
+                padding: 12px 15px;
+            }
+
+            .prose {
+                font-size: 0.9rem;
+            }
+
+            .prose h1 {
+                font-size: 1.6rem;
+            }
+
+            .prose h2 {
+                font-size: 1.3rem;
+            }
+
+            .prose h3 {
+                font-size: 1.15rem;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .tree-item {
+                font-size: 0.9rem;
+                padding: 6px 8px;
+            }
+        }
+
+        /* Overlay for mobile menu */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    <div id="app">
+        <aside id="sidebar">
+            <ul id="file-tree">
+                <!-- Tree will be injected here -->
+            </ul>
+        </aside>
+
+        <main>
+            <div class="top-right-menu">
+                <a href="qa-toeic.html">Switch to QA</a>
+            </div>
+            <div id="content-viewer">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="m9 10 2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <h2>Welcome to DocuMint</h2>
+                    <p>Select a document from the sidebar to start reading.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Configure Marked
+        marked.setOptions({
+            highlight: (code, lang) => hljs.highlight(code, { language: hljs.getLanguage(lang) ? lang : 'plaintext' }).value,
+            langPrefix: 'hljs language-',
+            breaks: true,
+            gfm: true
+        });
+
+        const fileTreeEl = document.getElementById('file-tree');
+        const contentEl = document.getElementById('content-viewer');
+
+        const ICONS = {
+            folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10V7a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l1.414 1.414a1 1 0 0 0 .707.293H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7Z"/></svg>',
+            file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"/></svg>',
+            caret: '<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>'
+        };
+
+        function buildFileTree(paths) {
+            const tree = {};
+            paths.forEach(path => {
+                const parts = path.split('/');
+                let currentLevel = tree;
+                parts.forEach((part, index) => {
+                    if (!currentLevel[part]) {
+                        if (index === parts.length - 1 && part.endsWith('.md')) {
+                            currentLevel[part] = { _is_file: true, path: path };
+                        } else {
+                            currentLevel[part] = {};
+                        }
+                    }
+                    currentLevel = currentLevel[part];
+                });
+            });
+            return tree;
+        }
+
+        // Function to set active file and open parents
+        function setActiveFileInTree(filepath) {
+            document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.folder-item.open').forEach(el => el.classList.remove('open')); // Close all folders first
+
+            if (!filepath) return;
+
+            const activeFileElement = document.querySelector(`li[data-filepath="${filepath}"]`);
+            if (activeFileElement) {
+                // Set active class
+                const treeItemDiv = activeFileElement.querySelector('.tree-item');
+                if (treeItemDiv) {
+                    treeItemDiv.classList.add('active');
+                }
+
+                // Open parent folders
+                let parent = activeFileElement.parentNode;
+                while (parent && parent.classList.contains('nested-list')) {
+                    const folderItem = parent.closest('.folder-item');
+                    if (folderItem) {
+                        folderItem.classList.add('open');
+                    }
+                    parent = folderItem ? folderItem.parentNode : null;
+                }
+            }
+        }
+
+
+        function renderTree(node, container) {
+            if (!node) return;
+
+            const sortedKeys = Object.keys(node).sort((a, b) => {
+                const aIsFile = node[a]._is_file;
+                const bIsFile = node[b]._is_file;
+                if (aIsFile === bIsFile) return a.localeCompare(b); // Sort files and folders alphabetically
+                return aIsFile ? 1 : -1; // Files after folders
+            });
+
+            sortedKeys.forEach(key => {
+                const childNode = node[key];
+                const li = document.createElement('li');
+
+                if (childNode._is_file) {
+                    li.className = 'file-item';
+                    li.dataset.filepath = childNode.path; // Store filepath
+                    const displayName = key.replace('.md', '');
+                    li.innerHTML = `<div class="tree-item">${ICONS.file}<span>${displayName}</span></div>`;
+                    li.onclick = (e) => {
+                        e.stopPropagation();
+                        loadContent(childNode.path);
+                    };
+                } else {
+                    li.className = 'folder-item';
+                    li.dataset.name = key; // Store folder name for potential later use
+                    li.innerHTML = `<div class="tree-item">${ICONS.caret}${ICONS.folder}<span>${key}</span></div>`;
+
+                    const nestedList = document.createElement('ul');
+                    nestedList.className = 'nested-list';
+                    renderTree(childNode, nestedList);
+                    li.appendChild(nestedList);
+
+                    li.querySelector('.tree-item').onclick = (e) => { // Click on the tree-item div, not the whole li
+                        e.stopPropagation();
+                        li.classList.toggle('open');
+                    };
+                }
+                container.appendChild(li);
+            });
+        }
+
+        async function fetchFiles() {
+            try {
+                const response = await fetch('/api/files');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const files = await response.json();
+                const fileTree = buildFileTree(files);
+                fileTreeEl.innerHTML = '';
+                renderTree(fileTree, fileTreeEl);
+            } catch (err) {
+                console.error('Error fetching files:', err);
+                fileTreeEl.innerHTML = '<li class="tree-item">Failed to load file tree.</li>';
+            }
+        }
+
+        async function loadContent(filepath) {
+            // Clear existing active states and set active file
+            setActiveFileInTree(filepath);
+
+            contentEl.innerHTML = '<div class="empty-state"><h2>Loading...</h2></div>';
+            try {
+                const response = await fetch(`/api/content/${encodeURIComponent(filepath)}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const markdown = await response.text();
+                contentEl.innerHTML = `<div class="prose">${marked.parse(markdown)}</div>`;
+                contentEl.querySelectorAll('pre code').forEach(hljs.highlightElement);
+                contentEl.scrollTop = 0;
+
+                // Update URL hash
+                window.location.hash = encodeURIComponent(filepath);
+
+            } catch (err) {
+                console.error('Error loading content:', err);
+                contentEl.innerHTML = `<div class="empty-state"><h2>Failed to load ${filepath}</h2></div>`;
+            }
+        }
+
+        // Initialize Application
+        async function initializeApp() {
+            await fetchFiles(); // First, get and render the file tree
+
+            // Check if there's a file in the hash to load
+            if (window.location.hash) {
+                const filepathFromHash = decodeURIComponent(window.location.hash.substring(1));
+                if (filepathFromHash) {
+                    loadContent(filepathFromHash);
+                }
+            }
+        }
+
+        // Handle hash changes (e.g., back/forward button in browser)
+        window.onhashchange = () => {
+            if (window.location.hash) {
+                const filepathFromHash = decodeURIComponent(window.location.hash.substring(1));
+                if (filepathFromHash) {
+                    loadContent(filepathFromHash);
+                }
+            } else {
+                // If hash is cleared, show empty state
+                contentEl.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke-linecap="round" stroke-linejoin="round" /><path d="m9 10 2 2 4-4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    <h2>Welcome to DocuMint</h2>
+                    <p>Select a document from the sidebar to start reading.</p>
+                </div>`;
+                setActiveFileInTree(null); // Clear active file
+            }
+        };
+
+        // Mobile menu functionality
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        const sidebar = document.getElementById('sidebar');
+
+        function toggleMobileMenu() {
+            sidebar.classList.toggle('mobile-open');
+            mobileOverlay.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            sidebar.classList.remove('mobile-open');
+            mobileOverlay.classList.remove('active');
+        }
+
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+
+        // Close mobile menu when a file is selected
+        const originalLoadContent = loadContent;
+        loadContent = function (filepath) {
+            closeMobileMenu();
+            return originalLoadContent(filepath);
+        };
+
+        initializeApp();
+    </script>
+</body>
+
+</html>
+</body>
+
+</html>
